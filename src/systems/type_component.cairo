@@ -9,6 +9,11 @@ mod TypeComponent {
     struct Storage {}
 
     #[external(v0)]
+    fn getMission(self: @ContractState, path: Span<felt252>) -> components::Mission {
+        components::Mission { value: influence::common::missions::read(path) }
+    }
+
+    #[external(v0)]
     fn getBuilding(self: @ContractState, path: Span<felt252>) -> components::Building {
             let comp_data = components::get::<components::Building>(path).expect(errors::BUILDING_NOT_FOUND);
             return comp_data;

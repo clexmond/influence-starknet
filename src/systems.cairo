@@ -17,6 +17,7 @@ mod policies;
 mod production;
 mod random_events;
 mod rewards;
+mod missions;
 mod sales;
 mod scanning;
 mod seeding;
