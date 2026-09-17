@@ -113,6 +113,9 @@ mod ConstructionStart {
         let build_time = setup_time + variable_time;
         let finish_time = crew_data.busy_until(context.now) + crew_to_lot + build_time;
 
+        // Distinguish successive constructions for campaign evidence.
+        assert(finish_time > context.now, 'construction duration is zero');
+
         // Update building
         building_data.status = building_statuses::UNDER_CONSTRUCTION;
         building_data.finish_time = finish_time;

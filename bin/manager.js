@@ -10,6 +10,7 @@ import ContractConfig from './lib/ContractConfig.js';
 import updateContract from './lib/updateContract.js';
 import updateDispatcher from './lib/updateDispatcher.js';
 import updateSystem from './lib/updateSystem.js';
+import updateClass from './lib/updateClass.js';
 import { createDryRunSummary, printDryRunSummary } from './lib/dryRun.js';
 
 import combineAbis from './commands/combineAbis.js';
@@ -119,6 +120,7 @@ const updateByName = async (name, network, account, options) => {
   if (config.isDispatcher(name)) await updateDispatcher(network, account, options);
   if (config.isSystem(name)) await updateSystem(name, network, account, options);
   if (config.isContract(name)) await updateContract(name, network, account, options);
+  if (config.isClass(name)) await updateClass(name, network, account, options);
 };
 
 export const update = async ({ name, names, network, account, skipBuild, maxFee, tip, dryRun, ignoreBaseline }) => {
@@ -152,6 +154,10 @@ export const updateAll = async ({ network, account, skipBuild, maxFee, tip, dryR
     const config = new ContractConfig(network);
     const contracts = config.getContracts();
     const systems = config.getSystems();
+
+    for (const name of config.getClasses()) {
+      await updateClass(name, network, resolvedAccount, options);
+    }
 
     for (const name of contracts) {
       await updateContract(name, network, resolvedAccount, options);

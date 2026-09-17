@@ -187,6 +187,9 @@ mod ProcessProductsStart {
         caller_crew.assert_can_until(processor, permissions::RUN_PROCESS, finish_time);
         caller_crew.assert_can_until(destination, permissions::ADD_PRODUCTS, finish_time);
 
+        // A restarted run must not reproduce a completed run's identity.
+        assert(finish_time > context.now, 'process duration is zero');
+
         // Update the processor and save
         processor_data.status = statuses::RUNNING;
         processor_data.running_process = process;

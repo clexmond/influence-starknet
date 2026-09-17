@@ -46,6 +46,7 @@ mod station;
 mod station_type;
 mod starter_pack;
 mod unique;
+mod mission;
 
 use agreements::contract::{ContractAgreement, ContractAgreementTrait};
 use agreements::prepaid::{PrepaidAgreement, PrepaidAgreementTrait};
@@ -100,6 +101,7 @@ use starter_pack::{
     StarterPackTrait
 };
 use unique::{Unique, UniqueTrait};
+use mission::Mission;
 
 const STORAGE_STRATEGY: u32 = 0; // rollup
 const EVENT_NAME: felt252 = 0x297be67eb977068ccd2304c6440368d4a6114929aeb860c98b6a7e91f96e2ef; // ComponentUpdated

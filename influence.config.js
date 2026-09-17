@@ -47,6 +47,16 @@ const testnetConfig = {
   Whitelist: { isSystem: true },
   WhitelistAccount: { isSystem: true },
 
+  // Missions (register and configure campaigns explicitly after declaration)
+  RegisterMissionCampaign: { isSystem: true },
+  AcceptMission: { isSystem: true },
+  MissionAction: { isSystem: true },
+  MissionValidate: { isSystem: true },
+  ClaimMissionReward: { isSystem: true },
+  ReadMissionState: { isSystem: true },
+  ConfigureStarterMissions: { isSystem: true },
+  StarterMissionCampaign: { isClass: true },
+
   // Construction
   ConstructionAbandon: { isSystem: true },
   ConstructionDeconstruct: { isSystem: true },
@@ -207,6 +217,16 @@ export default {
     TransferPrepaidAgreement: { isSystem: true },
     Whitelist: { isSystem: true },
     WhitelistAccount: { isSystem: true },
+
+    // Missions (register and configure campaigns explicitly after declaration)
+    RegisterMissionCampaign: { isSystem: true },
+    AcceptMission: { isSystem: true },
+    MissionAction: { isSystem: true },
+    MissionValidate: { isSystem: true },
+    ClaimMissionReward: { isSystem: true },
+    ReadMissionState: { isSystem: true },
+    ConfigureStarterMissions: { isSystem: true },
+    StarterMissionCampaign: { isClass: true },
 
     // Construction
     ConstructionAbandon: { isSystem: true },

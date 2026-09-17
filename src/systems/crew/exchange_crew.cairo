@@ -128,6 +128,7 @@ mod ExchangeCrew {
         let crew2_old = crew2_data.roster;
         let crew1_changed = !same_roster(crew1_old, comp1);
         let crew2_changed = !same_roster(crew2_old, comp2);
+        influence::common::mission_eligibility::exchange(crew1, crew1_old, comp1, crew2, crew2_old, comp2);
         crew1_data.roster = comp1;
         crew2_data.roster = comp2;
 

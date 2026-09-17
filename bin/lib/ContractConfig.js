@@ -30,6 +30,14 @@ class ContractConfig {
     return contracts;
   }
 
+  getClasses() {
+    return Object.entries(this.config).filter(([, value]) => value.isClass).map(([name]) => name);
+  }
+
+  isClass(name) {
+    return this.config[name].isClass;
+  }
+
   isDispatcher(name) {
     return this.config[name].isDispatcher;
   }
