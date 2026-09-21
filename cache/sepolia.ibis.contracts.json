@@ -246,13 +246,13 @@
     }
   },
   "influence.ConstructionPlan.l6kosdt0o2r2g": {
-    "declaredAt": 1784202060851,
-    "declareTxHash": "0x738b3ddf98926e82a3a97d97c464fae97c115f51b2bc1d0b3b1622e48cb6356",
-    "classHash": "0x2f992d0aceb78cc352deaa628b07bbd780816a5e740622965314bcafc1b1a45",
+    "declaredAt": 1789981607397,
+    "declareTxHash": "0x7000136807ffef88adab7a6baeb5e12078fe1c87e7fb66d9280b9f8502ea26d",
+    "classHash": "0x6eceba8a9a7a43a36f8aa9bd8b73a3274d9b5370a8c06f40f2a39d47710cafd",
     "baseline": {
-      "acceptedClassHash": "0x2f992d0aceb78cc352deaa628b07bbd780816a5e740622965314bcafc1b1a45",
-      "classHash": "0x2f992d0aceb78cc352deaa628b07bbd780816a5e740622965314bcafc1b1a45",
-      "updatedAt": "2026-07-16T11:41:34.172Z",
+      "acceptedClassHash": "0x6eceba8a9a7a43a36f8aa9bd8b73a3274d9b5370a8c06f40f2a39d47710cafd",
+      "classHash": "0x6eceba8a9a7a43a36f8aa9bd8b73a3274d9b5370a8c06f40f2a39d47710cafd",
+      "updatedAt": "2026-09-21T09:07:19.726Z",
       "reason": "updated on-chain class hash"
     }
   },

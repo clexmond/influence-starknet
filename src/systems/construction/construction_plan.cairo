@@ -16,6 +16,7 @@ mod ConstructionPlan {
         modifier_type::types as modifier_types,
         inventory::{Inventory, InventoryTrait}};
     use influence::config::{entities, errors, permissions};
+    use influence::systems::agreements::helpers::use_lot_path;
     use influence::types::{Context, Entity, EntityTrait};
 
     #[storage]
@@ -58,13 +59,14 @@ mod ConstructionPlan {
 
         // Find if the caller is the lot user (or implied lot user as asteroid owner with no tenant present)
         let mut is_lot_user = false;
-        let mut user_path: Array<felt252> = Default::default();
-        user_path.append('UseLot');
-        user_path.append(lot.into());
-
-        match components::get::<Unique>(user_path.span()) {
+        match components::get::<Unique>(use_lot_path(lot)) {
             Option::Some(unique_data) => {
-                is_lot_user = unique_data.unique.try_into().unwrap().can(lot, permissions::USE_LOT);
+                let tenant: Entity = unique_data.unique.try_into().unwrap();
+                is_lot_user = if tenant.can(lot, permissions::USE_LOT) {
+                    caller_crew == tenant
+                } else {
+                    caller_crew.controls(asteroid)
+                };
             },
             Option::None(_) => {
                 is_lot_user = caller_crew.controls(asteroid);
@@ -101,5 +103,154 @@ mod ConstructionPlan {
             caller_crew: caller_crew,
             caller: context.caller
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use option::OptionTrait;
+    use traits::{Into, TryInto};
+
+    use influence::components;
+    use influence::components::{Control, ControlTrait, Location, LocationTrait, PrepaidAgreement,
+        PrepaidAgreementTrait, Unique, building_type::types as building_types};
+    use influence::config::permissions;
+    use influence::systems::agreements::helpers::{agreement_path, lot_use_path, use_lot_path};
+    use influence::test::{helpers, mocks};
+    use influence::types::{Entity, EntityTrait};
+
+    use super::ConstructionPlan;
+
+    // Crew 1 controls the asteroid; crew 2 is the tenant; crew 3 is unrelated.
+    fn plan_with_lease(caller_id: u64, agreement: Option<PrepaidAgreement>, now: u64) {
+        helpers::init();
+        mocks::constants();
+        starknet::testing::set_block_timestamp(now);
+        let asteroid = mocks::asteroid();
+        let owner = mocks::delegated_crew(1, 'OWNER');
+        let tenant = mocks::delegated_crew(2, 'TENANT');
+        let stranger = mocks::delegated_crew(3, 'STRANGER');
+        components::set::<Control>(asteroid.path(), ControlTrait::new(owner));
+        let lot = EntityTrait::from_position(asteroid.id, 1001);
+        match agreement {
+            Option::Some(data) => {
+                components::set::<Unique>(use_lot_path(lot), Unique { unique: tenant.into() });
+                components::set::<PrepaidAgreement>(agreement_path(lot, permissions::USE_LOT, tenant.into()), data);
+            },
+            Option::None(_) => ()
+        };
+        let (caller, delegate) = if caller_id == 1 {
+            (owner, 'OWNER')
+        } else if caller_id == 2 {
+            (tenant, 'TENANT')
+        } else {
+            (stranger, 'STRANGER')
+        };
+        components::set::<Location>(caller.path(), LocationTrait::new(lot));
+        mocks::building_type(building_types::WAREHOUSE);
+
+        let mut state = ConstructionPlan::contract_state_for_testing();
+        ConstructionPlan::run(ref state, building_types::WAREHOUSE, lot, caller, mocks::context(delegate));
+
+        let building: Entity = components::get::<Unique>(lot_use_path(lot)).expect('lot not occupied')
+            .unique.try_into().unwrap();
+        let control = components::get::<Control>(building.path()).expect('building control missing');
+        assert(control.controller == caller, 'wrong building controller');
+    }
+
+    fn lease() -> Option<PrepaidAgreement> {
+        Option::Some(PrepaidAgreementTrait::new(1, 100, 20, 1, 200))
+    }
+
+    fn cancelled_lease() -> Option<PrepaidAgreement> {
+        let mut data = PrepaidAgreementTrait::new(1, 100, 20, 1, 170);
+        data.notice_time = 150;
+        Option::Some(data)
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    fn test_owner_never_leased() {
+        plan_with_lease(1, Option::None(()), 201);
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    #[should_panic(expected: ('E2005: incorrect controller', ))]
+    fn test_stranger_never_leased() {
+        plan_with_lease(3, Option::None(()), 201);
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    fn test_owner_expired_lease() {
+        plan_with_lease(1, lease(), 201);
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    #[should_panic(expected: ('E2005: incorrect controller', ))]
+    fn test_former_tenant_expired_lease() {
+        plan_with_lease(2, lease(), 201);
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    #[should_panic(expected: ('E2005: incorrect controller', ))]
+    fn test_stranger_expired_lease() {
+        plan_with_lease(3, lease(), 201);
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    fn test_active_tenant() {
+        plan_with_lease(2, lease(), 200);
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    #[should_panic(expected: ('E2005: incorrect controller', ))]
+    fn test_owner_active_lease() {
+        plan_with_lease(1, lease(), 200);
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    #[should_panic(expected: ('E2005: incorrect controller', ))]
+    fn test_stranger_active_lease() {
+        plan_with_lease(3, lease(), 200);
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    fn test_owner_cancelled_lease() {
+        plan_with_lease(1, cancelled_lease(), 171);
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    fn test_tenant_during_notice() {
+        plan_with_lease(2, cancelled_lease(), 170);
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    #[should_panic(expected: ('E2005: incorrect controller', ))]
+    fn test_owner_during_notice() {
+        plan_with_lease(1, cancelled_lease(), 170);
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    #[should_panic(expected: ('E2005: incorrect controller', ))]
+    fn test_former_tenant_cancelled_lease() {
+        plan_with_lease(2, cancelled_lease(), 171);
+    }
+
+    #[test]
+    #[available_gas(30000000)]
+    #[should_panic(expected: ('E2005: incorrect controller', ))]
+    fn test_stranger_cancelled_lease() {
+        plan_with_lease(3, cancelled_lease(), 171);
     }
 }
