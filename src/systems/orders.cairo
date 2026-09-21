@@ -45,8 +45,11 @@ mod helpers {
     // Returns (deposit, adjusted_maker_fee)
     fn required_deposit(value: u64, maker_fee: u64, maker_eff: Fixed, enforce_eff: Fixed) -> (u64, u64) {
         let adjusted_maker_fee = adjusted_fee(maker_fee, maker_eff, enforce_eff);
-        let maker_fees = (value * adjusted_maker_fee) / 10000;
-        return (value + maker_fees, adjusted_maker_fee);
+        return (value_with_maker_fee(value, adjusted_maker_fee), adjusted_maker_fee);
+    }
+
+    fn value_with_maker_fee(value: u64, maker_fee: u64) -> u64 {
+        return value + (value * maker_fee) / 10000;
     }
 
     // Calculates the required withdrawals to player and exchange for filling a limit buy order (market sell)

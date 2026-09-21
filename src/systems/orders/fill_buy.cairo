@@ -12,7 +12,7 @@ mod FillBuyOrder {
     use cubit::f64::{Fixed, FixedTrait, ONE};
 
     use influence::{components, config, contracts};
-    use influence::common::{crew::CrewDetailsTrait, inventory, position, math::RoundedDivTrait};
+    use influence::common::{crew::CrewDetailsTrait, inventory, position};
     use influence::components::{Building, BuildingTrait, Celestial, Control, Crew, CrewTrait, Exchange, Location,
         LocationTrait, Inventory, Ship, ShipTrait,
         modifier_type::types as modifier_types,
@@ -21,7 +21,7 @@ mod FillBuyOrder {
     use influence::config::{entities, errors, permissions};
     use influence::entities::next_id;
     use influence::interfaces::escrow::Withdrawal;
-    use influence::systems::orders::helpers::{required_withdrawals, order_path};
+    use influence::systems::orders::helpers::{required_withdrawals, value_with_maker_fee, order_path};
     use influence::types::{SpanTraitExt, Context, Entity, EntityTrait, InventoryItem, InventoryItemTrait};
 
     #[storage]
@@ -122,17 +122,17 @@ mod FillBuyOrder {
         let to_seller: u256 = *escrow_withdrawals.at(0).amount;
         let to_marketplace: u256 = *escrow_withdrawals.at(1).amount;
 
-        // Check if this is a cancellation: buyer is seller, and only one withdrawal for full amount
-        // OR caller crew controls the destination inventory and only one withdrawal for full amount
-        let total_amount = (order_data.amount * price * (10000 + order_data.maker_fee)).div_ceil(10000);
+        // Partial fills can leave rounding dust above this minimum refund. Escrow checks the
+        // withdrawal against the actual balance, allowing the client to refund that balance in full.
+        let minimum_refund = value_with_maker_fee(order_data.amount * price, order_data.maker_fee);
         let maybe_cancel = caller_crew.controls(storage) || buyer_crew == caller_crew;
 
-        if maybe_cancel && to_seller == total_amount.into() && to_marketplace == 0 {
+        if maybe_cancel && to_seller >= minimum_refund.into() && to_marketplace == 0 {
             // Ensure that the recipient is set to the buyer crew's delegated account
             let buyer_account = CrewDetailsTrait::new(buyer_crew).component.delegated_to;
             assert(buyer_account == *escrow_withdrawals.at(0).recipient, 'incorrect recipient');
 
-            // Since the buyer is the seller, and a full withdrawal occured, cancel the order
+            // The buyer or destination controller is cancelling the remaining order.
             order_data.status = order_statuses::CANCELLED;
             components::set::<Order>(order_path, order_data);
 
@@ -329,7 +329,7 @@ mod tests {
         order::{statuses as order_statuses, types as order_types, Order}};
     use influence::config::entities;
     use influence::interfaces::escrow::Withdrawal;
-    use influence::systems::orders::helpers::{order_path};
+    use influence::systems::orders::helpers::{order_path, required_deposit, required_withdrawals};
     use influence::types::{EntityTrait, InventoryItem, InventoryItemTrait};
     use influence::test::{helpers, mocks};
 
@@ -344,9 +344,9 @@ mod tests {
         mocks::modifier_type(modifier_types::FREE_TRANSPORT_DISTANCE);
     }
 
-    #[test]
-    #[available_gas(70000000)]
-    fn test_fill_buy_order() {
+    fn fill_and_cancel_buy_order(
+        price: u64, initial_amount: u64, fill_amounts: Span<u64>, maker_fee: u64, refund_recipient: felt252
+    ) {
         starknet::testing::set_contract_address(starknet::contract_address_const::<'DISPATCHER'>());
         helpers::init();
         mocks::constants();
@@ -382,7 +382,7 @@ mod tests {
         components::set::<Control>(warehouse.path(), ControlTrait::new(crew));
         let mut inventory_path = array![warehouse.into(), 2].span();
         let mut inventory_data = components::get::<Inventory>(inventory_path).unwrap();
-        let mut supplies = array![InventoryItemTrait::new(product_types::WATER, 1000)].span();
+        let mut supplies = array![InventoryItemTrait::new(product_types::WATER, initial_amount)].span();
         inventory::add_unchecked(ref inventory_data, supplies);
         components::set::<Inventory>(inventory_path, inventory_data);
 
@@ -392,7 +392,7 @@ mod tests {
         components::set::<Control>(destination.path(), ControlTrait::new(buyer_crew));
         inventory_path = array![destination.into(), 2].span();
         inventory_data = components::get::<Inventory>(inventory_path).unwrap();
-        supplies = array![InventoryItemTrait::new(product_types::WATER, 1000)].span();
+        supplies = array![InventoryItemTrait::new(product_types::WATER, initial_amount)].span();
         inventory::reserve(ref inventory_data, supplies, FixedTrait::ONE(), FixedTrait::ONE());
         components::set::<Inventory>(inventory_path, inventory_data);
 
@@ -402,57 +402,56 @@ mod tests {
         exchange_data.taker_fee = 0;
         components::set::<Exchange>(market.path(), exchange_data);
         let order_path = order_path(
-            buyer_crew, market, order_types::LIMIT_BUY, product_types::WATER, 10000000, destination, 2
+            buyer_crew, market, order_types::LIMIT_BUY, product_types::WATER, price, destination, 2
         );
 
         components::set::<Order>(order_path, Order {
             status: order_statuses::OPEN,
-            amount: 1000,
+            amount: initial_amount,
             valid_time: 0,
-            maker_fee: 667
+            maker_fee: maker_fee
         });
 
-        // Setup escrow withdrawals
-        let mut escrow_withdrawals: Array<Withdrawal> = Default::default();
-        escrow_withdrawals.append(Withdrawal {
-            recipient: starknet::contract_address_const::<'PLAYER'>(),
-            amount: 10000000 * 500
-        });
-
-        escrow_withdrawals.append(Withdrawal {
-            recipient: starknet::contract_address_const::<'MARKET'>(),
-            amount: 333500000
-        });
-
+        let (deposit, _) = required_deposit(price * initial_amount, maker_fee, FixedTrait::ONE(), FixedTrait::ONE());
+        let mut balance: u256 = deposit.into();
+        let mut remaining_amount = initial_amount;
         let mut state = FillBuyOrder::contract_state_for_testing();
-        FillBuyOrder::run(
-            ref state,
-            buyer_crew: buyer_crew,
-            exchange: market,
-            product: product_types::WATER,
-            price: 10000000,
-            storage: destination,
-            storage_slot: 2,
-            amount: 500,
-            origin: warehouse,
-            origin_slot: 2,
-            caller_crew: crew,
-            escrow_caller: starknet::contract_address_const::<'PLAYER'>(),
-            escrow_type: 2, // WITHDRAW
-            escrow_token: starknet::contract_address_const::<'SWAY'>(),
-            escrow_withdrawals: escrow_withdrawals.span(),
-            context: mocks::context('ESCROW')
-        );
-
-        // Check order
-        let mut order_data = components::get::<Order>(order_path).unwrap();
-        assert(order_data.amount == 500, 'wrong order amount');
+        for fill_amount in fill_amounts {
+            let (to_market, to_seller) = required_withdrawals(
+                price * *fill_amount, maker_fee, 0, FixedTrait::ONE(), FixedTrait::ONE()
+            );
+            balance -= (to_market + to_seller).into();
+            let withdrawals = array![
+                Withdrawal { recipient: starknet::contract_address_const::<'PLAYER'>(), amount: to_seller.into() },
+                Withdrawal { recipient: starknet::contract_address_const::<'MARKET'>(), amount: to_market.into() }
+            ];
+            FillBuyOrder::run(
+                ref state,
+                buyer_crew: buyer_crew,
+                exchange: market,
+                product: product_types::WATER,
+                price: price,
+                storage: destination,
+                storage_slot: 2,
+                amount: *fill_amount,
+                origin: warehouse,
+                origin_slot: 2,
+                caller_crew: crew,
+                escrow_caller: starknet::contract_address_const::<'PLAYER'>(),
+                escrow_type: 2,
+                escrow_token: starknet::contract_address_const::<'SWAY'>(),
+                escrow_withdrawals: withdrawals.span(),
+                context: mocks::context('ESCROW')
+            );
+            remaining_amount -= *fill_amount;
+            assert(components::get::<Order>(order_path).unwrap().amount == remaining_amount, 'wrong order amount');
+        };
 
         // Cancel remainder of order
-        escrow_withdrawals = Default::default();
+        let mut escrow_withdrawals: Array<Withdrawal> = Default::default();
         escrow_withdrawals.append(Withdrawal {
-            recipient: starknet::contract_address_const::<'BUYER'>(),
-            amount: 5333500000
+            recipient: refund_recipient.try_into().unwrap(),
+            amount: balance
         });
 
         escrow_withdrawals.append(Withdrawal {
@@ -465,7 +464,7 @@ mod tests {
             buyer_crew: buyer_crew,
             exchange: market,
             product: product_types::WATER,
-            price: 10000000,
+            price: price,
             storage: destination,
             storage_slot: 2,
             amount: 0,
@@ -479,12 +478,47 @@ mod tests {
             context: mocks::context('ESCROW')
         );
 
-        order_data = components::get::<Order>(order_path).unwrap();
+        let order_data = components::get::<Order>(order_path).unwrap();
         assert(order_data.status == order_statuses::CANCELLED, 'order not cancelled');
 
         // Make sure storage reservation is cleared (not all of it since previous delivery still pending)
         inventory_data = components::get::<Inventory>(inventory_path).unwrap();
-        assert(inventory_data.reserved_mass == 500000, 'reserved mass not cleared');
+        assert(inventory_data.reserved_mass == (initial_amount - remaining_amount) * 1000, 'reserved mass not cleared');
+    }
+
+    #[test]
+    #[available_gas(70000000)]
+    fn test_fill_buy_order() {
+        fill_and_cancel_buy_order(10000000, 1000, array![500].span(), 667, 'BUYER');
+    }
+
+    #[test]
+    #[available_gas(70000000)]
+    fn test_cancel_fractional_maker_fee() {
+        // Deposit is 102; the previous cancellation calculation required 103.
+        fill_and_cancel_buy_order(1, 101, array![].span(), 100, 'BUYER');
+    }
+
+    #[test]
+    #[available_gas(70000000)]
+    fn test_cancel_fractional_maker_fee_after_fill() {
+        // Deposit 306 minus a fill of 102 leaves 204, not the previous refund of 205.
+        fill_and_cancel_buy_order(1, 303, array![101].span(), 100, 'BUYER');
+    }
+
+    #[test]
+    #[available_gas(150000000)]
+    fn test_cancel_refunds_partial_fill_dust() {
+        // Deposit 303 minus three fills of 50 leaves 153. Recalculating the remaining
+        // value and fee gives 151 rounded down or 152 rounded up, both leaving dust.
+        fill_and_cancel_buy_order(1, 300, array![50, 50, 50].span(), 100, 'BUYER');
+    }
+
+    #[test]
+    #[should_panic(expected: ('incorrect recipient', ))]
+    #[available_gas(70000000)]
+    fn test_cancel_rejects_wrong_refund_recipient() {
+        fill_and_cancel_buy_order(1, 101, array![].span(), 100, 'PLAYER');
     }
 
     #[test]

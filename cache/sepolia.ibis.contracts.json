@@ -578,24 +578,24 @@
     }
   },
   "influence.CreateBuyOrder.ggf0eqp4nrhie": {
-    "declaredAt": 1731506640471,
-    "declareTxHash": "0x493f7d243f28729415199098b5259594858c46ba01bb04652ddcaba79a4bcb2",
-    "classHash": "0x700f604e1aa5543a3dd8db97cc1e2d0337226d196154203fc7aa42bb72460af",
+    "declaredAt": 1789980867322,
+    "declareTxHash": "0x6c5de49386e9f1e9d52b3bfbc488d714c58392b5068cec0702ca95d542fb39b",
+    "classHash": "0x23affde775b6e22997536ddb1a6493d9d638a2285c430c85936a456096f028f",
     "baseline": {
-      "acceptedClassHash": "0x700f604e1aa5543a3dd8db97cc1e2d0337226d196154203fc7aa42bb72460af",
-      "classHash": "0x761f67b6a4cd6c8b9e80ca6eca2f458e9d76b272602fd6bbef97899d52a0f76",
-      "createdAt": "2026-07-16",
-      "reason": "accepted Cairo 2.7 migration baseline"
+      "acceptedClassHash": "0x23affde775b6e22997536ddb1a6493d9d638a2285c430c85936a456096f028f",
+      "classHash": "0x23affde775b6e22997536ddb1a6493d9d638a2285c430c85936a456096f028f",
+      "updatedAt": "2026-09-21T08:54:58.776Z",
+      "reason": "updated on-chain class hash"
     }
   },
   "influence.FillBuyOrder.oc1joa0in95h8": {
-    "declaredAt": 1784202102269,
-    "declareTxHash": "0x1d667932d290b71e248fd65ea77709e30e0381523002924f4f0fc3f78a352da",
-    "classHash": "0x7191a19fb425d42f75570399f13d8bd36a01883e435c108ad8483d8e87dc24d",
+    "declaredAt": 1789980906234,
+    "declareTxHash": "0x3b1ff7a64fe772b622f878be5d0fc12e26621300228b68c3077f75418dbc333",
+    "classHash": "0x499819ecf2b2016509e85913a7520e8239cc2110d259e4a17be42fd02169b44",
     "baseline": {
-      "acceptedClassHash": "0x7191a19fb425d42f75570399f13d8bd36a01883e435c108ad8483d8e87dc24d",
-      "classHash": "0x7191a19fb425d42f75570399f13d8bd36a01883e435c108ad8483d8e87dc24d",
-      "updatedAt": "2026-07-16T11:42:15.709Z",
+      "acceptedClassHash": "0x499819ecf2b2016509e85913a7520e8239cc2110d259e4a17be42fd02169b44",
+      "classHash": "0x499819ecf2b2016509e85913a7520e8239cc2110d259e4a17be42fd02169b44",
+      "updatedAt": "2026-09-21T08:55:38.060Z",
       "reason": "updated on-chain class hash"
     }
   },
