@@ -1,3 +1,5 @@
+use influence::contracts::dispatcher::Dispatcher::{Event, ConstantRegistered};
+use array::ArrayTrait;
 use hash::LegacyHash;
 use option::OptionTrait;
 use starknet::{ClassHash, ContractAddress, SyscallResultTrait};
@@ -59,4 +61,13 @@ fn set(name: felt252, value: felt252) {
     let base = starknet::storage_base_address_from_felt252(LegacyHash::hash(selector, name));
     let address = starknet::storage_address_from_base_and_offset(base, 0);
     starknet::storage_write_syscall(0, address, value).unwrap_syscall();
+}
+
+fn set_with_event(name: felt252, value: felt252) {
+    let event = Event::ConstantRegistered(ConstantRegistered { name, value });
+    let mut keys = array![];
+    let mut data = array![];
+    starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+    set(name, value);
+    starknet::syscalls::emit_event_syscall(keys.span(), data.span()).unwrap_syscall();
 }

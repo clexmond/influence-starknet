@@ -72,7 +72,22 @@ test('starter mission transactions preserve attribution and roll back failed act
   const template = await declare('StarterMissionCampaign');
   const campaign = felt('StarterRuntime');
   await invoke(admin, system('RegisterMissionCampaign', [campaign, template, 8]));
-  await invoke(admin, system('ConfigureStarterMissions', [campaign, 100]));
+  const activation = await invoke(admin, system('ConfigureStarterMissions', [campaign, 100]));
+  const constants = activation.events.filter((event) =>
+    BigInt(event.from_address) === BigInt(dispatcher)
+      && BigInt(event.keys[0]) === BigInt(hash.getSelectorFromName('ConstantRegistered')));
+  assert.deepEqual(constants.map((event) => event.keys.map(BigInt)), [
+    [BigInt(hash.getSelectorFromName('ConstantRegistered'))],
+    [BigInt(hash.getSelectorFromName('ConstantRegistered'))]
+  ]);
+  assert.deepEqual(constants.map((event) => event.data.map(BigInt)), [
+    [BigInt(felt('STARTER_MISSION_CUTOFF')), 100n],
+    [BigInt(felt('STARTER_MISSION_CAMPAIGN')), BigInt(campaign)]
+  ]);
+  for (const event of constants) {
+    const stored = await provider.callContract(call(dispatcher, 'constant', [event.data[0]]));
+    assert.equal(BigInt(stored[0]), BigInt(event.data[1]));
+  }
   await invoke(admin, call(dispatcher, 'register_contract', [felt('Sway'), token]));
   const packedCrew = BigInt(Entity.packEntity({ label: Entity.IDS.CREW, id: 101 }));
   const packedAsteroid = BigInt(Entity.packEntity({ label: Entity.IDS.ASTEROID, id: 1 }));
@@ -116,13 +131,17 @@ test('starter mission transactions preserve attribution and roll back failed act
     try { await account.waitForTransaction(tx.transaction_hash, { retryInterval: 100 }); } catch { /* Inspect the actual receipt below. */ }
     const receipt = await provider.getTransactionReceipt(tx.transaction_hash);
     assert.equal(receipt.execution_status, 'REVERTED');
-    for (const name of ['MissionAccepted', 'MissionCompleted', 'MissionRewardClaimed']) {
+    for (const name of ['MissionAccepted', 'MissionCompleted', 'MissionRewardClaimed', 'ConstantRegistered']) {
       assert.deepEqual(missionEvents(receipt, name), []);
     }
     // The existing Dispatcher uses Result.unwrap and masks nested panic text.
     // Assert persisted state and successful recovery below instead.
     return receipt;
   };
+  await reverted(player, system('ConfigureStarterMissions', [campaign, 0]));
+  await reverted(admin, system('ConfigureStarterMissions', [campaign, 0]));
+  const cutoff = await provider.callContract(call(dispatcher, 'constant', [felt('STARTER_MISSION_CUTOFF')]));
+  assert.equal(BigInt(cutoff[0]), 100n);
   // Missing refinery configuration fails after native gameplay has written the building and lot-use records.
   await reverted(player, plan(Building.IDS.REFINERY));
   assert.deepEqual(await read(), [1n, 0n, 0n, 0n]);

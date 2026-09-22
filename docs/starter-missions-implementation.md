@@ -169,3 +169,9 @@ Their ABI definitions live in `MissionAction`. The event name selector is the so
 Acceptance and completion events are emitted only when their corresponding lifecycle bit changes. Acceptance can immediately emit completion when prior campaign evidence already satisfies the requirement. Claims emit after a successful SWAY transfer, recording the actual recipient. Reverted transactions retain none of these events. Existing component and native gameplay events remain available; no additional persistent storage is introduced.
 
 The fresh-devnet runtime test checks receipt payloads and Dispatcher attribution, retained native gameplay events, duplicate-validation suppression, and absence of lifecycle events on reverted actions, repeated acceptance, failed payouts, and repeated claims.
+
+### Activation constants and indexing
+
+`ConfigureStarterMissions` emits the Dispatcher's existing `ConstantRegistered(name, value)` event for both `STARTER_MISSION_CUTOFF` and `STARTER_MISSION_CAMPAIGN`. The events originate from the Dispatcher and contain the values written by activation, so event replay can discover the active campaign and eligibility cutoff.
+
+For a deployment activated before this fix, do not activate again. Either backfill the server from the two live constants, or have an administrator read those values and submit them unchanged through `Dispatcher.register_constant`. The latter emits new indexable events and preserves the existing campaign definition and progress. Updating the configurator alone does not retroactively emit events.

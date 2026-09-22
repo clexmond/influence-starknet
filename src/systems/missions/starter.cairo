@@ -607,7 +607,7 @@ mod ConfigureStarterMissions {
             campaign != 0 && missions::read(array!['DefinitionCount', campaign].span()) == 8,
             'invalid starter definition'
         );
-        config::set('STARTER_MISSION_CUTOFF', crew_cutoff.into());
-        config::set('STARTER_MISSION_CAMPAIGN', campaign);
+        config::set_with_event('STARTER_MISSION_CUTOFF', crew_cutoff.into());
+        config::set_with_event('STARTER_MISSION_CAMPAIGN', campaign);
     }
 }
