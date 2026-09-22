@@ -1349,8 +1349,8 @@
     }
   },
   "influence.StarterMissionCampaign.6ipmt8au9sauq": {
-    "declaredAt": 1790064186144,
-    "declareTxHash": "0x13b78de739046d561c39dc55a0ad707cbeed24c2eed4d13af03234c01c3562a",
-    "classHash": "0x191c448d350cb55c9087117720e9c216557aa2b4d7859fff3d360dd52f10a52"
+    "declaredAt": 1790074589932,
+    "declareTxHash": "0x7bf43e4192ffaafcbe5d54049e2260d444d6eb7d1a15946451dd4c86d4da187",
+    "classHash": "0x4dc00f3a46dd3ac7e74dfde7230d21b5f694420213f3f75a3b161aeb90462c3"
   }
 }

@@ -188,7 +188,7 @@ Agreed starter sequence and thresholds (supersedes the earlier order and reward 
 | Refine the Yield | Complete a Refinery and finish ≥1 full recipe-equivalent of an approved refinery process. | 50,000 | 125,000 |
 | Cultivate Life | Complete a Bioreactor and finish ≥1 full batch of an approved biological process. | 35,000 | 160,000 |
 | Manufacture Goods | Complete a Factory and finish ≥1 full recipe-equivalent of an approved manufacturing process. | 40,000 | 200,000 |
-| Close the Production Loop | Complete an approved linked production route of ≥2 transformations and put the final product to economic use. | 25,000 | 225,000 |
+| Close the Production Loop | Complete an approved linked production route of ≥2 transformations and use or deliver the final product. | 25,000 | 225,000 |
 
 Evidence and interpretation constraints:
 
@@ -221,7 +221,7 @@ Agreed capstone completion rules:
 - Complete any one of the five approved routes in order, using the same valid campaign crew.
 - Each stage must complete at least one full recipe-equivalent, or at least one full biological batch where applicable.
 - Both stages may use the same building when supported. Distinct buildings are not required; this supersedes earlier multi-building wording.
-- After stage 2 completes, put its final product to economic use: consume it in a gameplay action, complete a delivery, or sell it through a filled order. Holding inventory or merely listing an unfilled order does not qualify.
+- After stage 2 completes, put its final product to economic use: consume it in a gameplay action or complete an outgoing delivery to a different entity. Holding inventory, listing goods, and sales through either order mechanism do not qualify.
 - Purchased replacement inputs are permitted; no literal batch provenance is required. Validate compatible product identities, qualifying quantities, ordering, crew attribution and successful actions through campaign evidence.
 
 The starter mission requirement decisions are complete. Crew cutoff X remains a launch-time configuration value; implementation must still validate mass conversions, positive-duration run identity and the supported economic-use action paths.

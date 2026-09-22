@@ -1011,22 +1011,16 @@ fn market_fill(seller_campaign: bool) {
     Serde::<Entity>::serialize(@warehouse, ref args);
     args.append(2);
     Serde::<Entity>::serialize(@crew, ref args);
-    let assignment = if seller_campaign {
-        let sale = Assignment { subject: seller_crew, ..a };
-        starknet::testing::set_caller_address(starknet::contract_address_const::<'SELLER'>());
-        accept(sale, 0);
-        influence::systems::missions::starter::record_final_product(sale, product_types::WATER);
-        starknet::testing::set_caller_address(starknet::contract_address_const::<'PLAYER'>());
-        sale
-    } else {
-        a
-    };
+    let sale = Assignment { subject: seller_crew, ..a };
+    starknet::testing::set_caller_address(starknet::contract_address_const::<'SELLER'>());
+    accept(sale, 0);
+    influence::systems::missions::starter::record_final_product(sale, product_types::WATER);
+    influence::systems::missions::starter::record_final_product(a, product_types::WATER);
+    starknet::testing::set_caller_address(starknet::contract_address_const::<'PLAYER'>());
+    let assignment = if seller_campaign { sale } else { a };
     dispatch('MissionAction', @(assignment, 'FillSellOrder', args.span()));
-    if seller_campaign {
-        assert(
-            influence::systems::missions::starter::earned(assignment, 7), 'filled sale not credited'
-        );
-    }
+    assert(!influence::systems::missions::starter::earned(sale, 7), 'sale credited capstone');
+    assert(!influence::systems::missions::starter::earned(a, 7), 'purchase credited capstone');
 
     // Check order
     let order_data = components::get::<Order>(order_path).unwrap();
@@ -1040,6 +1034,8 @@ fn market_fill(seller_campaign: bool) {
     );
     act(a, 'ReceiveDelivery', @delivery);
     assert(influence::systems::missions::starter::earned(a, 3), 'received purchase not credited');
+    assert(!influence::systems::missions::starter::earned(sale, 7), 'sale delivery credited seller');
+    assert(!influence::systems::missions::starter::earned(a, 7), 'purchase receipt credited');
 }
 
 #[test]
@@ -1094,7 +1090,8 @@ fn starter_missions_actual_market_purchase_receipt() {
 
 #[test]
 #[available_gas(150000000)]
-fn starter_missions_actual_market_sale_receipt() {
+#[should_panic]
+fn starter_missions_buyer_cannot_use_seller_assignment() {
     market_fill(true);
 }
 

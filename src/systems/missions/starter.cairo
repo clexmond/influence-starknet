@@ -240,13 +240,7 @@ fn validate(a: Assignment) {
 }
 
 fn action(a: Assignment, name: felt252, args: Span<felt252>, context: Context) {
-    // A buyer may finalize the accepted seller's capstone sale. Native gameplay
-    // verifies the buyer and consumes the seller/fee receipts.
-    if name != 'FillSellOrder' {
-        authorize(a, context);
-    } else {
-        eligibility::assert_valid(a.subject);
-    }
+    authorize(a, context);
     eligibility::participate(a.subject);
     if name == 'ConstructionPlan' {
         let (kind, lot) = parse::<(u64, Entity)>(args);
@@ -454,7 +448,7 @@ fn action(a: Assignment, name: felt252, args: Span<felt252>, context: Context) {
             parse::<
             (Entity, Entity, u64, u64, u64, Entity, u64, Entity, u64, Entity)
         >(args);
-        assert(seller == a.subject || buyer == a.subject, 'unrelated trade');
+        assert(buyer == a.subject, 'not campaign buyer');
         let before = influence::entities::current_id('Delivery');
         run(
             name,
@@ -472,13 +466,8 @@ fn action(a: Assignment, name: felt252, args: Span<felt252>, context: Context) {
             buyer,
             context
         );
-        if seller == a.subject {
-            economic(a, array![InventoryItem { product, amount }].span());
-        }
-        if buyer == a.subject {
-            let delivery = new_entity(entities::DELIVERY, 'Delivery', before);
-            bind_delivery(a, delivery, false);
-        }
+        let delivery = new_entity(entities::DELIVERY, 'Delivery', before);
+        bind_delivery(a, delivery, false);
     } else {
         panic_with_felt252('unsupported mission action');
     }

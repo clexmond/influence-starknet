@@ -16,7 +16,7 @@ The public systems are:
 - `ReadMissionState(assignment, slot)` — returns accepted/completed/paid and one template-defined evidence slot.
 - `ConfigureStarterMissions(campaign, crew_cutoff)` — administrator-only, one-time activation of an eight-mission campaign.
 
-All run through existing `Dispatcher.run_system`. `MissionAction` is a registered system, not an external self-call to the Dispatcher. The original authenticated Context is appended once to the child gameplay calldata. Its caller and storage address remain intact. Clients exclude caller crew and Context from ordinary wrapped arguments; the template supplies them. `FillSellOrder` is the exception: arguments include the buyer crew as a final Entity because the selected assignment may belong to the seller.
+All run through existing `Dispatcher.run_system`. `MissionAction` is a registered system, not an external self-call to the Dispatcher. The original authenticated Context is appended once to the child gameplay calldata. Its caller and storage address remain intact. Clients exclude caller crew and Context from ordinary wrapped arguments; the template supplies them. `FillSellOrder` is the exception: arguments include the buyer crew as a final Entity which must match the assignment subject. This adapter tracks purchases for Warehouse storage only.
 
 The implementation interface is `evaluate(assignment, operation, action, arguments, context) -> (beneficiary, reward_micro_sway)`. Operations are accept (0), action (1), validate (2), and quote claim (3). The framework owns lifecycle, lock, and payment; the trusted implementation owns eligibility, action adapters, prerequisites, evidence, and reward policy. A separate asteroid-subject test implementation exercises the same framework without starter branches.
 
@@ -33,7 +33,7 @@ Campaign classes are privileged code executing in Dispatcher storage. Registrati
 | Refine the Yield | Construct a Refinery and complete ≥1 recipe-equivalent | 50,000 | 125,000 |
 | Cultivate Life | Construct a Bioreactor and complete ≥1 full batch | 35,000 | 160,000 |
 | Manufacture Goods | Construct a Factory and complete ≥1 recipe-equivalent | 40,000 | 200,000 |
-| Close the Production Loop | Complete an approved ordered pair, then use, deliver, or sell a positive amount of its final output product | 25,000 | 225,000 |
+| Close the Production Loop | Complete an approved ordered pair, then use or deliver a positive amount of its final output product | 25,000 | 225,000 |
 
 All native supported processes for the three building types qualify. Fractions below one do not qualify, even when native biological scheduling rounds them up. Quantities use product mass in grams; 100,000 kg is 100,000,000 grams. Sample yields are already kilograms.
 
@@ -41,7 +41,7 @@ Approved route process IDs are `24 → 23`, `29 → 38`, `27 → 40`, `35 → 56
 
 Storage counts actual mixed-product inventory mass, excluding reservations. Purchases count after delivery completes. Receipt by the campaign crew into its campaign Warehouse can qualify even when the sender did not participate. Extraction output can qualify directly. Merely constructing the Warehouse does not.
 
-Capstone economic-use adapters currently cover `ProcessProductsStart`, material-funded `ConstructionStart`, `ResupplyFood`, completed `SendDelivery`/`ReceiveDelivery`, and filled `FillSellOrder`. Empty-allowance construction/food, stockholding, inflight deliveries, and unfilled listings do not qualify. Delivery to the same entity does not qualify as economic transfer. A buyer can submit a wrapped sale against the seller's accepted assignment; native buyer authorization and seller/fee receipts remain mandatory.
+Capstone economic-use adapters currently cover `ProcessProductsStart`, material-funded `ConstructionStart`, `ResupplyFood`, and completed `SendDelivery`/`ReceiveDelivery`. Empty-allowance construction/food, stockholding, inflight deliveries, and unfilled listings do not qualify. Delivery to the same entity does not qualify as economic transfer. Sales do not qualify, including fills of standing buy orders. The `FillSellOrder` adapter only accepts the buyer's assignment and preserves native buyer authorization and seller/fee receipt checks. Purchased deliveries may satisfy Warehouse storage, but do not count as capstone economic use.
 
 ## Eligibility and entitlement
 
@@ -113,7 +113,7 @@ Construction attribution is checked against the current construction's type, pla
 
 Native SWAY receipt flows work through the wrapper; no extra `run_system_with_missions_with_payment` entrypoint exists. The existing paid-Context Dispatcher boundary was tested, but this repository's Sway implementation has no verified producer for that callback. Starter actions therefore reject nonzero payment Context instead of inventing or trusting a sender.
 
-`FillBuyOrder` uses Escrow-appended callback metadata and is not a wrapped capstone sale adapter in this release. Such purchases can still satisfy storage through a wrapped delivery receipt. Capstone sellers can use a wrapped sell-order fill, completed delivery, or supported consumption. Adding escrow sale fulfillment later requires an explicit authenticated adapter; it must not infer caller identity from client-supplied metadata.
+`FillBuyOrder` uses Escrow-appended callback metadata and is not a wrapped capstone sale adapter in this release. Such purchases can still satisfy storage through a wrapped delivery receipt. Capstone completion requires a completed outgoing delivery or supported consumption; neither sale mechanism awards capstone credit. No mission adapter is added to Escrow or native trade execution.
 
 Deployment tooling now distinguishes class-only campaign implementations (`isClass`) from gameplay systems (`isSystem`) and deployed contracts. Declare `StarterMissionCampaign`, register the generic systems and starter configurator, and upgrade `ExchangeCrew`, `InitializeArvadian`, `ConstructionStart`, `ExtractResourceStart`, and `ProcessProductsStart`. Register the chosen campaign with its declared implementation hash and eight missions, then configure the crew cutoff. Fund the Dispatcher reward balance. These activation calls are deliberately not automatic.
 
@@ -140,7 +140,7 @@ node --test test/missions/duration-config.test.js
 node --test test/missions/runtime.test.js
 ```
 
-Cairo coverage includes all eight missions with real gameplay systems, all five SDK recipe pairs, exact payout totals, early evidence, sample/mass/batch boundaries, reversed routes, pending vs received goods, actual purchase/sale receipts, construction consumption, caller admission, immutable registration, claim replay, wrapper reentry, packed-page/subject/campaign isolation, ordinary crew exchange, contamination propagation, and unwrapped restart attacks.
+Cairo coverage includes all eight missions with real gameplay systems, all five SDK recipe pairs, exact payout totals, early evidence, sample/mass/batch boundaries, reversed routes, pending vs received goods, actual purchase receipts, rejection of seller assignments, exclusion of trade and purchased-delivery capstone credit, construction consumption, caller admission, immutable registration, claim replay, wrapper reentry, packed-page/subject/campaign isolation, ordinary crew exchange, contamination propagation, and unwrapped restart attacks.
 
 The fresh-devnet test declares and deploys the real contracts and checks submitted reverting transactions, shared gameplay rollback, lock recovery, unfunded payout rollback, delegate payout, and claim replay. It uses its own local port and does not depend on the legacy devnet snapshot. The existing Dispatcher masks nested panic messages with `Result.unwrap`; the runtime checks use reverted receipts, persisted state, and successful recovery transactions rather than claiming to distinguish those masked messages.
 
