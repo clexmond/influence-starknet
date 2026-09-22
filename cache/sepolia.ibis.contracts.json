@@ -1338,13 +1338,13 @@
     }
   },
   "influence.ConfigureStarterMissions.bm1jg9c15bj58": {
-    "declaredAt": 1790064151044,
-    "declareTxHash": "0x2f22de519d3a043acc4595038858a743518b38f0b6ba9564e3cf07168c62aa5",
-    "classHash": "0xbaa8e4f9960c165831b2528c9764cf3522832bb4830656420cced7f0717f7a",
+    "declaredAt": 1790078790698,
+    "declareTxHash": "0x6e52a080c1febd4c80894b45905cca63b4be1c765e25aac9a083ada2cbcfbb6",
+    "classHash": "0x1277c5735bfde8ccb7add06fbc92559a0f8e84c7c3e106f311f78a816fc12a2",
     "baseline": {
-      "acceptedClassHash": "0xbaa8e4f9960c165831b2528c9764cf3522832bb4830656420cced7f0717f7a",
-      "classHash": "0xbaa8e4f9960c165831b2528c9764cf3522832bb4830656420cced7f0717f7a",
-      "updatedAt": "2026-09-22T08:03:01.113Z",
+      "acceptedClassHash": "0x1277c5735bfde8ccb7add06fbc92559a0f8e84c7c3e106f311f78a816fc12a2",
+      "classHash": "0x1277c5735bfde8ccb7add06fbc92559a0f8e84c7c3e106f311f78a816fc12a2",
+      "updatedAt": "2026-09-22T12:07:00.172Z",
       "reason": "updated on-chain class hash"
     }
   },
