@@ -175,3 +175,10 @@ The fresh-devnet runtime test checks receipt payloads and Dispatcher attribution
 `ConfigureStarterMissions` emits the Dispatcher's existing `ConstantRegistered(name, value)` event for both `STARTER_MISSION_CUTOFF` and `STARTER_MISSION_CAMPAIGN`. The events originate from the Dispatcher and contain the values written by activation, so event replay can discover the active campaign and eligibility cutoff.
 
 For a deployment activated before this fix, do not activate again. Either backfill the server from the two live constants, or have an administrator read those values and submit them unchanged through `Dispatcher.register_constant`. The latter emits new indexable events and preserves the existing campaign definition and progress. Updating the configurator alone does not retroactively emit events.
+
+
+### Recipe changes during pending production
+
+The pending production fingerprint is Poseidon over the serialized `Processor` component only. Its `running_process` field already identifies the process type. The recipe definition (`ProcessType`) is not included, so editing it does not by itself invalidate an existing mission-bound run. Native gameplay and mission output evaluation continue to use the applicable recipe configuration; this does not bypass native completion checks.
+
+Construction, sampling, extraction, and delivery fingerprints likewise contain instance/run data, not entire type definitions. SDK/indexer fingerprint calculations must use the same serialized component fields as the deployed campaign implementation. This change requires a new campaign implementation hash; an already registered campaign remains pinned to its previous hash until explicitly updated. No pending fingerprint migration is needed when none exist.

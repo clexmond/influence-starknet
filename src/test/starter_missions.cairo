@@ -1017,7 +1017,11 @@ fn market_fill(seller_campaign: bool) {
     influence::systems::missions::starter::record_final_product(sale, product_types::WATER);
     influence::systems::missions::starter::record_final_product(a, product_types::WATER);
     starknet::testing::set_caller_address(starknet::contract_address_const::<'PLAYER'>());
-    let assignment = if seller_campaign { sale } else { a };
+    let assignment = if seller_campaign {
+        sale
+    } else {
+        a
+    };
     dispatch('MissionAction', @(assignment, 'FillSellOrder', args.span()));
     assert(!influence::systems::missions::starter::earned(sale, 7), 'sale credited capstone');
     assert(!influence::systems::missions::starter::earned(a, 7), 'purchase credited capstone');
@@ -1034,7 +1038,9 @@ fn market_fill(seller_campaign: bool) {
     );
     act(a, 'ReceiveDelivery', @delivery);
     assert(influence::systems::missions::starter::earned(a, 3), 'received purchase not credited');
-    assert(!influence::systems::missions::starter::earned(sale, 7), 'sale delivery credited seller');
+    assert(
+        !influence::systems::missions::starter::earned(sale, 7), 'sale delivery credited seller'
+    );
     assert(!influence::systems::missions::starter::earned(a, 7), 'purchase receipt credited');
 }
 
@@ -1105,4 +1111,38 @@ fn starter_missions_construction_consumes_final_product() {
     assert(!influence::systems::missions::starter::earned(a, 7), 'holding cement counted');
     construct(a, ast, buildings::EXTRACTOR);
     assert(influence::systems::missions::starter::earned(a, 7), 'construction not credited');
+}
+
+#[test]
+#[available_gas(250000000)]
+fn starter_missions_recipe_change_preserves_pending_run() {
+    let (a, ast, warehouse) = landfall();
+    let refinery = construct(a, ast, buildings::REFINERY);
+    ready(a.subject);
+    let id = processes::WATER_VACUUM_EVAPORATION_DESALINATION;
+    let mut cfg = ProcessTypeTrait::by_type(id);
+    supply(warehouse, 2, cfg.inputs);
+    act(
+        a,
+        'ProcessProductsStart',
+        @(
+            refinery,
+            1_u64,
+            id,
+            product_types::DEIONIZED_WATER,
+            FixedTrait::ONE(),
+            warehouse,
+            2_u64,
+            warehouse,
+            2_u64
+        )
+    );
+    let processor = components::get::<Processor>(array![refinery.into(), 1].span()).unwrap();
+    cfg.setup_time += 1;
+    cfg.recipe_time += 1;
+    components::set::<influence::components::ProcessType>(array![id.into()].span(), cfg);
+    starknet::testing::set_block_timestamp(processor.finish_time);
+    act(a, 'ProcessProductsFinish', @(refinery, 1_u64));
+    assert(influence::systems::missions::starter::earned(a, 4), 'refining not credited');
+    assert(influence::systems::missions::starter::earned(a, 10), 'route stage not credited');
 }
