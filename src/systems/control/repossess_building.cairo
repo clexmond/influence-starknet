@@ -51,24 +51,26 @@ mod RepossessBuilding {
         unique_path.append('UseLot');
         unique_path.append(lot.into());
         let mut blocked_by_tenant = false;
-        let mut is_current_tenant = false;
+        let mut is_active_tenant = false;
 
         match components::get::<Unique>(unique_path.span()) {
             Option::Some(unique_data) => {
                 let tenant = unique_data.unique.try_into().unwrap();
-                blocked_by_tenant = tenant.can(lot, permissions::USE_LOT) && tenant != caller_crew;
-                is_current_tenant = tenant == caller_crew;
+                let has_lot_permission = tenant.can(lot, permissions::USE_LOT);
+                blocked_by_tenant = has_lot_permission && tenant != caller_crew;
+                // A lapsed tenant must restore their lease before exercising tenant repossession rights.
+                is_active_tenant = has_lot_permission && tenant == caller_crew;
             },
             Option::None(_) => ()
         };
 
         let is_asteroid_controller = caller_crew.controls(asteroid);
 
-        if is_asteroid_controller || is_current_tenant {
+        if is_asteroid_controller || is_active_tenant {
             // For the current controller, check if caller is not blocked by lot user
             assert(!blocked_by_tenant, 'blocked by lot user');
         } else {
-            // If not the controller, check if caller is the current tenant
+            // Other crews may only claim planned sites after the construction grace period.
             assert(building_data.status == building_statuses::PLANNED, 'not planned status');
             let grace_period = config::get('CONSTRUCTION_GRACE_PERIOD').try_into().unwrap();
             assert(context.now >= building_data.planned_at + grace_period, 'in grace period');

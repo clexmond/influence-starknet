@@ -146,6 +146,7 @@ mod ExtractResourceStart {
 
         // Update the extractor
         let finish_time = crew_data.busy_until(context.now) + crew_to_lot + extract_time + dep_to_dest;
+        assert(yield == 0 || finish_time > context.now, 'extraction duration is zero');
         extractor_data.status = extractor_statuses::RUNNING;
         extractor_data.output_product = deposit_data.resource;
         extractor_data.yield = yield;
