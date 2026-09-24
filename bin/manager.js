@@ -20,6 +20,8 @@ import seedOrders from './commands/seedOrders.js';
 import updateConfigs from './commands/updateConfigs.js';
 import updateConstant from './commands/updateConstant.js';
 import cancelOrders from './commands/cancelOrders.js';
+import cleanupLotTenancy from './commands/cleanupLotTenancy.js';
+import { TENANCY_SYSTEMS } from './lib/staleLotTenancy.js';
 
 logger.setLogLevel('WARN');
 
@@ -179,6 +181,36 @@ export const updateAll = async ({ network, account, skipBuild, maxFee, tip, dryR
 };
 
 yargs(hideBin(process.argv))
+  .command({
+    command: 'cleanupLotTenancy',
+    desc: 'Clear verified stale UseLot records left by owner construction (dry run by default)',
+    builder: (y) => y.version(false)
+      .option('network', { describe: 'Network config', alias: 'n', type: 'string', demandOption: true })
+      .option('account', { describe: 'Admin account; only needed with --apply', alias: 'a', type: 'string' })
+      .option('input', { describe: 'JSON array of ConstructionPlanned transaction hashes to inspect', type: 'string' })
+      .option('fromBlock', { describe: 'Discover planning transactions from this block through latest', type: 'number' })
+      .option('output', { describe: 'Write the review report to this JSON file', type: 'string' })
+      .option('apply', { describe: 'Submit verified cleanup writes during maintenance', type: 'boolean', default: false })
+      .option('maxFee', { describe: 'Max fee per transaction', type: 'string' })
+      .option('tip', { describe: 'Tip per transaction', type: 'string' })
+      .check((argv) => {
+        if (Boolean(argv.input) === (argv.fromBlock !== undefined)) throw new Error('Provide exactly one of --input or --fromBlock');
+        if (argv.fromBlock !== undefined && (!Number.isSafeInteger(argv.fromBlock) || argv.fromBlock < 0)) {
+          throw new Error('--fromBlock must be a nonnegative integer');
+        }
+        return true;
+      })
+      .epilog(`Requires archival storage and block receipts. Does not infer staleness from current ownership.\nBefore --apply, deploy the ConstructionPlan/RepossessBuilding fixes and unregister (class hash 0) these systems:\n${TENANCY_SYSTEMS.join(', ')}.\nKeep them paused until cleanup completes, then restore their registered hashes. This command does not pause or resume systems.\nOnly UseLot is cleared; agreements and buildings are preserved. Save --output for review and retain transaction hashes.`),
+    handler: async (args) => {
+      try {
+        const account = args.apply ? await getAccount(args.account, args.network) : undefined;
+        await cleanupLotTenancy({ ...args, account });
+      } catch (error) {
+        console.error(error);
+        process.exitCode = 1;
+      }
+    }
+  })
   .command({
     command: 'update',
     desc: 'Declares, deploys and ugrades contracts and systems by name',

@@ -59,12 +59,14 @@ mod ConstructionPlan {
 
         // Find if the caller is the lot user (or implied lot user as asteroid owner with no tenant present)
         let mut is_lot_user = false;
+        let mut clear_stale_tenant = false;
         match components::get::<Unique>(use_lot_path(lot)) {
             Option::Some(unique_data) => {
                 let tenant: Entity = unique_data.unique.try_into().unwrap();
                 is_lot_user = if tenant.can(lot, permissions::USE_LOT) {
                     caller_crew == tenant
                 } else {
+                    clear_stale_tenant = true;
                     caller_crew.controls(asteroid)
                 };
             },
@@ -76,6 +78,11 @@ mod ConstructionPlan {
         // Must control the lot (no more squatting allowed)
         assert(is_lot_user, errors::INCORRECT_CONTROLLER);
         crew_details.assert_all_but_ready(context.caller, context.now);
+
+        // Historical tenancy must not grant rights over the owner's replacement building.
+        if clear_stale_tenant {
+            components::set::<Unique>(use_lot_path(lot), Unique { unique: 0 });
+        }
 
         // Update building
         let building = EntityTrait::new(entities::BUILDING, next_id(entities::BUILDING.into()));
@@ -156,6 +163,11 @@ mod tests {
             .unique.try_into().unwrap();
         let control = components::get::<Control>(building.path()).expect('building control missing');
         assert(control.controller == caller, 'wrong building controller');
+        if caller_id == 1 {
+            assert(components::get::<Unique>(use_lot_path(lot)).is_none(), 'stale tenant retained');
+        } else {
+            assert(components::get::<Unique>(use_lot_path(lot)).unwrap().unique == tenant.into(), 'active tenant cleared');
+        }
     }
 
     fn lease() -> Option<PrepaidAgreement> {
