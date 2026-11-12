@@ -39,3 +39,14 @@ fn set(name: felt252, value: ContractAddress) {
     let address = starknet::storage_address_from_base_and_offset(base, 0);
     starknet::storage_write_syscall(0, address, contract_address_to_felt252(value)).unwrap_syscall();
 }
+
+fn set_with_event(name: felt252, address: ContractAddress) {
+    let event = dispatcher::Dispatcher::Event::ContractRegistered(
+        dispatcher::Dispatcher::ContractRegistered { name, address }
+    );
+    let mut keys = array![];
+    let mut data = array![];
+    starknet::Event::append_keys_and_data(@event, ref keys, ref data);
+    set(name, address);
+    starknet::syscalls::emit_event_syscall(keys.span(), data.span()).unwrap_syscall();
+}

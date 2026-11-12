@@ -36,6 +36,21 @@ mod ReadComponent {
         } else if name == 'Delivery' {
             let comp_data = components::get::<components::Delivery>(path).expect(errors::DELIVERY_NOT_FOUND);
             Serde::<components::Delivery>::serialize(@comp_data, ref res);
+        } else if name == 'ProspectingCampaign' {
+            let comp_data = components::get::<components::ProspectingCampaign>(path).expect('component not found');
+            Serde::<components::ProspectingCampaign>::serialize(@comp_data, ref res);
+        } else if name == 'ProspectingCore' {
+            let comp_data = components::get::<components::ProspectingCore>(path).expect('component not found');
+            Serde::<components::ProspectingCore>::serialize(@comp_data, ref res);
+        } else if name == 'ProspectingOrigin' {
+            let comp_data = components::get::<components::ProspectingOrigin>(path).expect('component not found');
+            Serde::<components::ProspectingOrigin>::serialize(@comp_data, ref res);
+        } else if name == 'ExtractorSlots' {
+            let comp_data = components::get::<components::ExtractorSlots>(path).expect('component not found');
+            Serde::<components::ExtractorSlots>::serialize(@comp_data, ref res);
+        } else if name == 'Claim' {
+            let comp_data = components::get::<components::Claim>(path).expect('claim not found');
+            Serde::<components::Claim>::serialize(@comp_data, ref res);
         } else if name == 'Deposit' {
             let comp_data = components::get::<components::Deposit>(path).expect(errors::DEPOSIT_NOT_FOUND);
             Serde::<components::Deposit>::serialize(@comp_data, ref res);

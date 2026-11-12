@@ -23,6 +23,9 @@ import updateConstant from './commands/updateConstant.js';
 import cancelOrders from './commands/cancelOrders.js';
 import cleanupLotTenancy from './commands/cleanupLotTenancy.js';
 import { TENANCY_SYSTEMS } from './lib/staleLotTenancy.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { prepareProofDeployment, deployProspectingProof } from './lib/prospectingDeployment.js';
 
 logger.setLogLevel('WARN');
 
@@ -160,6 +163,30 @@ export const updateAll = async ({ network, account, skipBuild, maxFee, tip, dryR
 };
 
 yargs(hideBin(process.argv))
+  .command({
+    command: 'deployProspectingProof',
+    desc: 'Declare ECIP and deploy the single Groth16 verifier and transcript adapter; never activate gameplay',
+    builder: y => y
+      .option('network', { alias: 'n', choices: ['devnet', 'sepolia'], demand: true })
+      .option('account', { alias: 'a', describe: 'Deployment account' })
+      .option('dryRun', { type: 'boolean', describe: 'Print an offline deployment plan without submitting transactions' })
+      .option('output', { type: 'string', describe: 'Save the proof deployment plan or result' })
+      .option('tip', { type: 'string' })
+      .option('maxFee', { type: 'string' }),
+    handler: async ({ network, account, dryRun, output, maxFee, tip }) => {
+      const bundle = prepareProofDeployment();
+      const result = await deployProspectingProof({ bundle,
+        account: dryRun ? null : await getAccount(account, network),
+        options: buildTxOptions({ dryRun, maxFee, tip }) });
+      const text = JSON.stringify(result, null, 2) + '\n';
+      if (output) {
+        fs.mkdirSync(path.dirname(path.resolve(output)), { recursive: true });
+        fs.writeFileSync(output, text);
+      }
+      console.log(text);
+      console.log('Gameplay is not activated. Register the matching systems and call ConfigureProspecting last.');
+    }
+  })
   .command({
     command: 'cleanupLotTenancy',
     desc: 'Clear verified stale UseLot records left by owner construction (dry run by default)',

@@ -1,7 +1,14 @@
 import { shortString } from 'starknet';
 
+const prospectingSystems = Object.fromEntries([
+  'ConfigureProspecting', 'ProspectingStart', 'ProspectingSample', 'ProspectingFinalize',
+  'ProspectingAbandon', 'ReadProspectingCampaign', 'ReadProspectingSample', 'ReadProspectingRandomness',
+  'ReadProspectingOrigin', 'PreviewProspectingSample', 'BaselineExtractResourceStart', 'Abundance', 'TypeComponent'
+].map(name => [name, { isSystem: true }]));
+
 // Config for both local devnets and testnets
 const testnetConfig = {
+  ...prospectingSystems,
   Dispatcher: { isDispatcher: true, constructorArgs: { admin: '{CALLER}' } },
   Asteroid: { isContract: true, constructorArgs: {
     name: shortString.encodeShortString('Influence Asteroids'),
@@ -184,6 +191,7 @@ export default {
   testnet: testnetConfig,
   sepolia: testnetConfig,
   mainnet: {
+    ...prospectingSystems,
     Dispatcher: { isDispatcher: true, constructorArgs: { admin: '{CALLER}' } },
     Asteroid: { isContract: true, constructorArgs: {
       name: shortString.encodeShortString('Influence Asteroids'),

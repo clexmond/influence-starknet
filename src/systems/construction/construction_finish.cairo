@@ -64,6 +64,7 @@ mod ConstructionFinish {
         } else if building_data.building_type == building_types::EXTRACTOR {
             path.append(1); // extractor slot
             components::set::<Extractor>(path.span(), ExtractorTrait::new(extractor_types::BASIC));
+            components::set::<components::ExtractorSlots>(building.path(), components::ExtractorSlots { count: 1 });
         } else if building_data.building_type == building_types::REFINERY {
             path.append(1); // processor slot
             components::set::<Processor>(path.span(), ProcessorTrait::new(processor_types::REFINERY));

@@ -43,6 +43,21 @@ mod WriteComponent {
         } else if name == 'Delivery' {
             let comp_data = Serde::<components::Delivery>::deserialize(ref data).unwrap();
             components::set::<components::Delivery>(path, comp_data);
+        } else if name == 'Claim' {
+            let comp_data = Serde::<components::Claim>::deserialize(ref data).unwrap();
+            components::set::<components::Claim>(path, comp_data);
+        } else if name == 'ProspectingCampaign' {
+            let comp_data = Serde::<components::ProspectingCampaign>::deserialize(ref data).unwrap();
+            components::set::<components::ProspectingCampaign>(path, comp_data);
+        } else if name == 'ProspectingCore' {
+            let comp_data = Serde::<components::ProspectingCore>::deserialize(ref data).unwrap();
+            components::set::<components::ProspectingCore>(path, comp_data);
+        } else if name == 'ProspectingOrigin' {
+            let comp_data = Serde::<components::ProspectingOrigin>::deserialize(ref data).unwrap();
+            components::set::<components::ProspectingOrigin>(path, comp_data);
+        } else if name == 'ExtractorSlots' {
+            let comp_data = Serde::<components::ExtractorSlots>::deserialize(ref data).unwrap();
+            components::set::<components::ExtractorSlots>(path, comp_data);
         } else if name == 'Deposit' {
             let comp_data = Serde::<components::Deposit>::deserialize(ref data).unwrap();
             components::set::<components::Deposit>(path, comp_data);

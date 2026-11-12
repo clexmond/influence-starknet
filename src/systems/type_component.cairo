@@ -56,6 +56,31 @@ mod TypeComponent {
     }
 
     #[external(v0)]
+    fn getProspectingCampaign(self: @ContractState, path: Span<felt252>) -> components::ProspectingCampaign {
+        components::get::<components::ProspectingCampaign>(path).expect('component not found')
+    }
+
+    #[external(v0)]
+    fn getProspectingCore(self: @ContractState, path: Span<felt252>) -> components::ProspectingCore {
+        components::get::<components::ProspectingCore>(path).expect('component not found')
+    }
+
+    #[external(v0)]
+    fn getProspectingOrigin(self: @ContractState, path: Span<felt252>) -> components::ProspectingOrigin {
+        components::get::<components::ProspectingOrigin>(path).expect('component not found')
+    }
+
+    #[external(v0)]
+    fn getExtractorSlots(self: @ContractState, path: Span<felt252>) -> components::ExtractorSlots {
+        components::get::<components::ExtractorSlots>(path).expect('component not found')
+    }
+
+    #[external(v0)]
+    fn getClaim(self: @ContractState, path: Span<felt252>) -> components::Claim {
+        components::get::<components::Claim>(path).expect('claim not found')
+    }
+
+    #[external(v0)]
     fn getDeposit(self: @ContractState, path: Span<felt252>) -> components::Deposit {
             let comp_data = components::get::<components::Deposit>(path).expect(errors::DEPOSIT_NOT_FOUND);
             return comp_data;

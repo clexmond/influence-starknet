@@ -58,6 +58,9 @@ mod SampleDepositStart {
     }
 
     #[external(v0)]
+    fn prospecting_version(self: @ContractState) -> u64 { 1 }
+
+    #[external(v0)]
     fn run(
         ref self: ContractState,
         lot: Entity,
@@ -67,6 +70,7 @@ mod SampleDepositStart {
         caller_crew: Entity,
         context: Context
     ) {
+        assert(!influence::common::mining_rate::enabled(), 'legacy sampling disabled');
         // Check that crew is delegated, and ready
         let mut crew_details = CrewDetailsTrait::new(caller_crew);
         crew_details.assert_all_ready_within(context.caller, context.now);

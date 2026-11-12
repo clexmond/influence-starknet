@@ -19,7 +19,13 @@
     "devnet": "starknet-devnet --timeout 5000 --seed 12345 --initial-balance 10000000000000000000000000 --dump-path ./test/seeds/devnet.dump --dump-on exit",
     "export-missions": "node bin/exportMissionArtifacts.js",
     "test-missions-runtime": "node --test test/missions/*.test.js",
-    "build-mission-fixtures": "node test/missions/build-fixtures.js"
+    "build-mission-fixtures": "node test/missions/build-fixtures.js",
+    "build-prospecting-fixtures": "node test/prospecting/build-fixtures.js",
+    "test-prospecting": "scarb cairo-test -f prospecting",
+    "test-prospecting-runtime": "node --test test/prospecting/runtime.test.js",
+    "export-prospecting": "node bin/exportProspectingArtifacts.js",
+    "build-prospecting-proof": "npm --prefix proofs/fieldwork run build",
+    "setup-prospecting-proof": "npm --prefix proofs/fieldwork run setup:development"
   },
   "author": "Unstoppable Games, Inc.",
   "license": "CC-BY-NC-4.0",

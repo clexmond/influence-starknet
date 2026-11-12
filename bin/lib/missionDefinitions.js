@@ -22,7 +22,7 @@ export const missionDefinitions = {
   },
   starter: {
     campaignConstant: 'STARTER_MISSION_CAMPAIGN', subject: 'CREW',
-    observedSystems: ['ConstructionPlan', 'ConstructionStart', 'ConstructionFinish', 'SampleDepositStart', 'SampleDepositFinish', 'ExtractResourceStart', 'ExtractResourceFinish', 'ProcessProductsStart', 'ProcessProductsFinish', 'SendDelivery', 'ReceiveDelivery', 'ResupplyFood', 'FillSellOrder']
+    observedSystems: ['ConstructionPlan', 'ConstructionStart', 'ConstructionFinish', 'SampleDepositStart', 'SampleDepositFinish', 'ProspectingFinalize', 'BaselineExtractResourceStart', 'ExtractResourceStart', 'ExtractResourceFinish', 'ProcessProductsStart', 'ProcessProductsFinish', 'SendDelivery', 'ReceiveDelivery', 'ResupplyFood', 'FillSellOrder']
   },
   lifecycleEvents: ['MissionAccepted', 'MissionCompleted', 'MissionRewardClaimed'],
   contracts: ['Dispatcher', 'MissionObserver', 'StarterMissionCampaign', 'ColonizationMissionCampaign', 'RegisterMissionCampaign', 'UpgradeMissionCampaign', 'ConfigureStarterMissions', 'ConfigureColonizationMissions', 'MigrateStarterObserver', 'AcceptMission', 'MissionValidate', 'ReadMissionState', 'ClaimMissionReward']

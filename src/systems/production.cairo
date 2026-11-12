@@ -1,6 +1,7 @@
 mod assemble_ship_start;
 mod assemble_ship_finish;
 mod extract_resource_start;
+mod baseline_extract_start;
 mod extract_resource_finish;
 mod process_products_start;
 mod process_products_finish;

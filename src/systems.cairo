@@ -15,6 +15,7 @@ mod emergencies;
 mod orders;
 mod policies;
 mod production;
+mod prospecting;
 mod random_events;
 mod rewards;
 mod missions;

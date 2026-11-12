@@ -77,10 +77,7 @@ mod ConstructionDeconstruct {
             inventory.disable();
             components::set::<Inventory>(path.span(), inventory);
         } else if building_data.building_type == building_types::EXTRACTOR {
-            path.append(1); // extractor slot
-            let mut extractor = components::get::<Extractor>(path.span()).expect(errors::EXTRACTOR_NOT_FOUND);
-            extractor.assert_ready();
-            components::set::<Extractor>(path.span(), extractor);
+            influence::common::extractor_slots::assert_building_ready(building);
         } else if building_data.building_type == building_types::REFINERY ||
             building_data.building_type == building_types::BIOREACTOR ||
             building_data.building_type == building_types::FACTORY {

@@ -13,6 +13,22 @@ struct Entity {
     id: u64
 }
 
+impl StoreEntity of Store<Entity> {
+    fn read(address_domain: u32, base: StorageBaseAddress) -> SyscallResult<Entity> {
+        Self::read_at_offset(address_domain, base, 0)
+    }
+    fn write(address_domain: u32, base: StorageBaseAddress, value: Entity) -> SyscallResult<()> {
+        Self::write_at_offset(address_domain, base, 0, value)
+    }
+    fn read_at_offset(address_domain: u32, base: StorageBaseAddress, offset: u8) -> SyscallResult<Entity> {
+        Result::Ok(Store::<u128>::read_at_offset(address_domain, base, offset)?.try_into().unwrap())
+    }
+    fn write_at_offset(address_domain: u32, base: StorageBaseAddress, offset: u8, value: Entity) -> SyscallResult<()> {
+        Store::<u128>::write_at_offset(address_domain, base, offset, value.into())
+    }
+    fn size() -> u8 { 1 }
+}
+
 trait EntityTrait {
     fn new(label: u64, id: u64) -> Entity;
     fn path(self: Entity) -> Span<felt252>;

@@ -1,0 +1,14 @@
+{
+  "name": "influence-prospecting-proof",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "setup:development": "node build.mjs --setup-development"
+  },
+  "dependencies": {
+    "circom2": "0.2.22",
+    "circomlib": "2.0.5",
+    "snarkjs": "0.7.6"
+  }
+}

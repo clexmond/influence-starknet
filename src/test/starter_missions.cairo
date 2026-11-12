@@ -730,6 +730,25 @@ fn starter_missions_each_sample_must_meet_threshold() {
 }
 
 #[test]
+#[available_gas(100000000)]
+fn starter_missions_prospecting_requires_one_completed_thousand_tonne_claim() {
+    let (a, _) = setup();
+    influence::systems::missions::starter::record_sample(a, 500000);
+    influence::systems::missions::starter::record_sample(a, 500000);
+    config::set('PROSPECTING_ENABLED', 1);
+    influence::systems::missions::starter::record_sample(a, 1000000);
+    assert(!influence::systems::missions::starter::earned(a, 1), 'legacy sample counted');
+    influence::systems::missions::starter::record_prospecting(a, 999999);
+    assert(!influence::systems::missions::starter::earned(a, 1), 'undersized claim counted');
+    influence::systems::missions::starter::record_prospecting(a, 1000000);
+    assert(influence::systems::missions::starter::earned(a, 1), 'single claim did not count');
+    let state = missions::state(a, 0);
+    assert((state.try_into().unwrap() / 256_u128) % 4 == 1, 'legacy counter reused');
+    influence::systems::missions::starter::record_prospecting(a, 2000000);
+    assert(missions::state(a, 0) == state, 'completed mission changed');
+}
+
+#[test]
 #[available_gas(150000000)]
 fn starter_missions_storage_requires_actual_mass() {
     let (a, _, warehouse) = landfall();

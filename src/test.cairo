@@ -15,3 +15,5 @@ mod ship_eviction;
 
 mod mission_observer;
 mod colonization_missions;
+
+mod prospecting;

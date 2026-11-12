@@ -42,13 +42,22 @@ fn earn(a: Assignment, index: u32) {
 }
 
 fn record_sample(a: Assignment, initial_yield: u64) {
-    if initial_yield >= 500000 && !earned(a, 1) {
+    if !influence::common::mining_rate::enabled() && initial_yield >= 500000 && !earned(a, 1) {
         let word: u128 = missions::state(a, 0).try_into().unwrap();
         let count = word / 256 % 4 + 1;
         missions::set_state(a, 0, (word + 256).into());
         if count == 3 {
             earn(a, 1);
         }
+    }
+}
+
+fn record_prospecting(a: Assignment, initial_yield: u64) {
+    if initial_yield >= 1000000 && !earned(a, 1) {
+        let word: u128 = missions::state(a, 0).try_into().unwrap();
+        // Replace partial historical sample progress; a completed campaign is one observation.
+        missions::set_state(a, 0, (word - (word / 256 % 4) * 256 + 256).into());
+        earn(a, 1);
     }
 }
 
@@ -310,6 +319,21 @@ fn pre(a: Assignment, name: felt252, args: Span<felt252>, context: Context) -> S
         assert(missions::state(a, key('Sample', deposit, 0)) == hash(@data), 'unbound sample');
         assert(data.initial_yield == 0, 'not initial sampling');
         array![].span()
+    } else if name == 'ProspectingFinalize' {
+        let (id, _lot, _quantity, _rate, _proof) = parse::<(u64, Entity, u64, u64, Span<felt252>)>(args);
+        let campaign = influence::common::prospecting::campaign(id);
+        assert(campaign.crew == a.subject, 'wrong campaign crew');
+        influence::common::prospecting::assert_active(id, campaign);
+        encoded(@influence::entities::current_id(entities::DEPOSIT.into())).span()
+    } else if name == 'BaselineExtractResourceStart' {
+        let (resource, amount, building, _slot, _dest, _dest_slot) = parse::<(u64, u64, Entity, u64, Entity, u64)>(args);
+        let data = own_building(a, building);
+        assert(data.building_type == buildings::EXTRACTOR, 'not extractor');
+        assert(resource >= products::WATER && resource <= products::URANINITE, 'not raw resource');
+        let wide: u128 = amount.into();
+        let mass: u128 = ProductTypeTrait::by_type(resource).mass.into();
+        assert(wide * mass >= 100000000, 'extraction below threshold');
+        array![].span()
     } else if name == 'ExtractResourceStart' {
         let (deposit, amount, building, _slot, _dest, _dest_slot) = parse::<
             (Entity, u64, Entity, u64, Entity, u64)
@@ -440,6 +464,19 @@ fn post(
         let deposit = parse::<Entity>(args);
         missions::set_state(a, key('Sample', deposit, 0), 0);
         record_sample(a, components::get::<Deposit>(deposit.path()).unwrap().initial_yield);
+    } else if name == 'ProspectingFinalize' {
+        let (id, _lot, _quantity, _rate, _proof) = parse::<(u64, Entity, u64, u64, Span<felt252>)>(args);
+        let deposit = new_entity(entities::DEPOSIT, entities::DEPOSIT.into(), parse::<u64>(snapshot));
+        let campaign = influence::common::prospecting::campaign(id);
+        assert(campaign.claim == deposit && campaign.crew == a.subject, 'unbound campaign claim');
+        let claim = components::get::<components::Claim>(deposit.path()).unwrap();
+        assert(claim.rules_version == 1 && claim.campaign_id == id, 'wrong claim provenance');
+        record_prospecting(a, components::get::<Deposit>(deposit.path()).unwrap().initial_yield);
+    } else if name == 'BaselineExtractResourceStart' {
+        let (_resource, _amount, building, slot, _dest, _dest_slot) = parse::<(u64, u64, Entity, u64, Entity, u64)>(args);
+        let data = components::get::<Extractor>(array![building.into(), slot.into()].span()).unwrap();
+        assert(data.finish_time > context.now, 'zero duration');
+        missions::set_state(a, key('Extraction', building, slot), hash(@data));
     } else if name == 'ExtractResourceStart' {
         let (_deposit, _amount, building, slot, _dest, _dest_slot) = parse::<
             (Entity, u64, Entity, u64, Entity, u64)

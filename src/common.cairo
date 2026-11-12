@@ -20,3 +20,9 @@ mod mission_eligibility;
 mod lot_access;
 
 mod mission_evidence;
+
+mod abundance;
+mod mining_rate;
+mod extractor_slots;
+mod prospecting;
+mod extraction;

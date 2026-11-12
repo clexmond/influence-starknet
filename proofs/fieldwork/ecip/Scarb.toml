@@ -1,0 +1,12 @@
+[package]
+name = "universal_ecip"
+version = "0.1.0"
+edition = "2024_07"
+[dependencies]
+garaga = { git = "https://github.com/keep-starknet-strange/garaga.git", tag = "v1.1.0" }
+starknet = "2.16.1"
+[cairo]
+sierra-replace-ids = false
+[[target.starknet-contract]]
+casm = true
+casm-add-pythonic-hints = true
