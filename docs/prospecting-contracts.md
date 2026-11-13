@@ -39,6 +39,8 @@ later change to the registered lookup cannot change its completion arithmetic.
 - Every accepted sample consumes one `CORE_DRILL`, or one existing starter-pack
   core-sample entitlement when the inventory origin is empty. Accidents and misses
   still cost a sample. Reverts restore material, crew, campaign and event changes.
+  New Explorer / Strategist / Industrialist grants provide 10 / 15 / 20 uses.
+  Previously granted balances are unchanged; this is not a retroactive top-up.
 - Any `RUNNING` extractor slot on the target lot blocks sampling, including finished
   jobs awaiting collection. There is no campaign lock on lateral lots and no
   historical recheck at finalization. Extraction can start after an accepted sample.
@@ -212,7 +214,11 @@ The client now supports an explicit `App.prospectingMode=chain`, normal wallet a
 mission-observed transactions, fixed future-block reconciliation, per-campaign
 encrypted archives, and claim/baseline extraction through the regular dialog.
 Local simulation remains the default. Legacy sampling starts are unavailable in
-chain mode; pending legacy completions remain available.
+chain mode. Pending legacy samples and improvements use timed completion entries
+in the same prospecting sidebar; old action/activity links redirect there instead
+of opening legacy dialogs. Their original finish transaction needs neither private
+campaign data nor a proof. Completion submits the sample owner's crew even when
+another crew on the account is selected.
 
 The server indexes the five new components, normalizes V1 extraction starts to the
 existing activity family, and serves public campaign history. Its separate libp2p
@@ -233,8 +239,10 @@ new systems, and `deployProspectingProof` handles the separate proof package. No
 2. Declare the required Garaga ECIP operations class, deploy one Groth16 verifier,
    and deploy the immutable adapter with that one address.
 3. Register the new/updated gameplay systems, Abundance, construction systems,
-   component readers and mission observer listed in the manifest. Existing legacy
-   finish/collection systems remain registered.
+   component readers and mission observer listed in the manifest. Also update
+   `GrantOffchainStarterPack` for the new 10 / 15 / 20 allowances alongside the
+   matching server product catalog. Existing legacy finish/collection systems
+   remain registered.
 4. Update SDK/client transactions and server schemas/events together. Keep the
    activation constant zero until these consumers understand the new events.
 5. Call `ConfigureProspecting` as admin. It verifies the router protocol, checks the

@@ -224,9 +224,9 @@ mod GrantOffchainStarterPack {
     }
 
     fn pack_core_sample_allowance(product_id: u64) -> u64 {
-        if product_id == starter_pack_products::EXPLORER { return 5; }
-        if product_id == starter_pack_products::STRATEGIST { return 8; }
-        if product_id == starter_pack_products::INDUSTRIALIST { return 12; }
+        if product_id == starter_pack_products::EXPLORER { return 10; }
+        if product_id == starter_pack_products::STRATEGIST { return 15; }
+        if product_id == starter_pack_products::INDUSTRIALIST { return 20; }
         assert(false, 'invalid starter pack');
         return 0;
     }
@@ -262,7 +262,7 @@ mod tests {
         let mut state = GrantOffchainStarterPack::contract_state_for_testing();
         grant_explorer(ref state, station, 'stripe:explorer:1', 200, mocks::context('ADMIN'));
 
-        assert_pack(1, starter_pack_products::EXPLORER, 2, 1, 1, 0, 0, 0, 2, 5, 1);
+        assert_pack(1, starter_pack_products::EXPLORER, 2, 1, 1, 0, 0, 0, 2, 10, 1);
 
         let crewmate1 = EntityTrait::new(entities::CREWMATE, 20000);
         let crewmate1_data = components::get::<Crewmate>(crewmate1.path()).unwrap();
@@ -292,7 +292,7 @@ mod tests {
         let mut state = GrantOffchainStarterPack::contract_state_for_testing();
         grant_strategist(ref state, station, 'stripe:strategist:1', 200, mocks::context('ADMIN'));
 
-        assert_pack(1, starter_pack_products::STRATEGIST, 3, 1, 1, 1, 0, 0, 3, 8, 1);
+        assert_pack(1, starter_pack_products::STRATEGIST, 3, 1, 1, 1, 0, 0, 3, 15, 1);
     }
 
     #[test]
@@ -302,7 +302,7 @@ mod tests {
         let mut state = GrantOffchainStarterPack::contract_state_for_testing();
         grant_industrialist(ref state, station, 'stripe:industrial:1', 200, mocks::context('ADMIN'));
 
-        assert_pack(1, starter_pack_products::INDUSTRIALIST, 5, 1, 1, 1, 1, 1, 5, 12, 1);
+        assert_pack(1, starter_pack_products::INDUSTRIALIST, 5, 1, 1, 1, 1, 1, 5, 20, 1);
     }
 
     #[test]
@@ -320,7 +320,7 @@ mod tests {
         let mut state = GrantOffchainStarterPack::contract_state_for_testing();
         grant_explorer(ref state, station, 'stripe:role:1', 200, mocks::context('STRIPE_JOB'));
 
-        assert_pack(1, starter_pack_products::EXPLORER, 2, 1, 1, 0, 0, 0, 2, 5, 1);
+        assert_pack(1, starter_pack_products::EXPLORER, 2, 1, 1, 0, 0, 0, 2, 10, 1);
 
         let crew_contract = ICrewDispatcher { contract_address: contracts::get('Crew') };
         assert(
